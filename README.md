@@ -43,10 +43,10 @@ ERROR_RABBIT_MQ_QUEUE_EAR_LIQUIDATION=
 API_KEY=
 EAR_VALUE=
 
-# Configuración de Mailjet (comentado por ahora)
-MAILJET_API_KEY=2cc8cd6b26f2b850b0ac8351622e35d1
-MAILJET_API_SECRET=0834bfd8429fd548addddbf4dcc90f7d
-SENDER_MAILJET_EMAIL=auxjs0599@gmail.com
+# Configuración de Mailjet
+MAILJET_API_KEY=
+MAILJET_API_SECRET=
+SENDER_MAILJET_EMAIL=
 ```
 
 ## Instalación
