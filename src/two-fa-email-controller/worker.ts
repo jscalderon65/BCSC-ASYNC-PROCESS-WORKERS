@@ -1,30 +1,31 @@
-import { EAR_LIQUIDATOR_WORKER_NAME } from '@ear-liquidator/common/constants/config-worker';
+import { Logger } from '@nestjs/common';
+import { TWO_FA_EMAIL_CONTROLLER_WORKER_NAME } from '@two-fa-email-controller/common/constants/config-worker';
 import {
   CONNECTION_ATTEMPT_MESSAGES,
   CONNECTION_ERROR_MESSAGE,
   CONNECTION_MESSAGE,
-  ERROR_RABBIT_MQ_QUEUE_EAR_LIQUIDATION,
+  ERROR_RABBIT_MQ_QUEUE_EMAIL_NOTIFICATION,
   FAILED_CHANNEL_CREATION_MESSAGE,
   MAX_RETRIES_MESSAGE,
   MESSAGE_SENT,
   ON_CLOSE_CONNECTION_MESSAGE,
   PROCESS_FAILED_MESSAGE,
+  RABBIT_EMAIL_NOTIFICATION_QUEUE,
   RABBIT_MQ_MAX_RECONECTION_ATTEMPTS,
-  RABBIT_MQ_QUEUE_EAR_LIQUIDATION,
   RABBIT_MQ_RECONECTION_RETRY_DELAY,
   RABBIT_MQ_SERVER,
   RETRYING_MESSAGE,
-} from '@ear-liquidator/common/constants/rabbit-mq';
-import { calculateDailyLiquidationInterest } from '@ear-liquidator/operations';
-import { Logger } from '@nestjs/common';
+} from '@two-fa-email-controller/common/constants/rabbit-mq';
 import * as amqp from 'amqplib';
 
-export class EarLiquidatorWorker {
+import { sendTwoFactorAuthenticationEmail } from './operations';
+
+export class TwoFaEmailControllerWorker {
   private connection: amqp.Connection | null = null;
   private channel: amqp.Channel | null = null;
   private readonly maxRetries = RABBIT_MQ_MAX_RECONECTION_ATTEMPTS;
   private readonly retryDelay = RABBIT_MQ_RECONECTION_RETRY_DELAY;
-  private readonly logger = new Logger(EAR_LIQUIDATOR_WORKER_NAME);
+  private readonly logger = new Logger(TWO_FA_EMAIL_CONTROLLER_WORKER_NAME);
 
   constructor() {}
 
@@ -47,8 +48,8 @@ export class EarLiquidatorWorker {
         this.channel = await this.connection.createChannel();
         this.setupConnectionHandlers();
         CONNECTION_MESSAGE(
-          EAR_LIQUIDATOR_WORKER_NAME,
-          RABBIT_MQ_QUEUE_EAR_LIQUIDATION,
+          TWO_FA_EMAIL_CONTROLLER_WORKER_NAME,
+          RABBIT_EMAIL_NOTIFICATION_QUEUE,
         );
         return;
       } catch (error) {
@@ -78,21 +79,19 @@ export class EarLiquidatorWorker {
 
     if (!this.channel) throw new Error(FAILED_CHANNEL_CREATION_MESSAGE);
 
-    await this.channel.assertQueue(RABBIT_MQ_QUEUE_EAR_LIQUIDATION, {
+    await this.channel.assertQueue(RABBIT_EMAIL_NOTIFICATION_QUEUE, {
       durable: true,
     });
 
-    this.channel.consume(RABBIT_MQ_QUEUE_EAR_LIQUIDATION, async (msg: any) => {
+    this.channel.consume(RABBIT_EMAIL_NOTIFICATION_QUEUE, async (msg: any) => {
       if (msg) {
         try {
           const messageFormatted = JSON.parse(msg.content.toString());
-          await calculateDailyLiquidationInterest(
-            messageFormatted,
-            this.logger,
-          );
+          this.logger.log(messageFormatted);
+          await sendTwoFactorAuthenticationEmail(messageFormatted, this.logger);
           this.channel.ack(msg);
         } catch (error) {
-          const errorQueueName = ERROR_RABBIT_MQ_QUEUE_EAR_LIQUIDATION;
+          const errorQueueName = ERROR_RABBIT_MQ_QUEUE_EMAIL_NOTIFICATION;
           this.logger.error(PROCESS_FAILED_MESSAGE, error);
           await this.sendToQueue(errorQueueName, msg);
           this.logger.error(MESSAGE_SENT(errorQueueName));

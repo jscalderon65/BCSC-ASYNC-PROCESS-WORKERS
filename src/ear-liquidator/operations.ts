@@ -29,7 +29,7 @@ export async function calculateDailyLiquidationInterest(
 
   const updateBalanceAccountDto: UpdateBalanceAccountDto = {
     account_id: savingAccount._id,
-    amount: savingAccount.balance + generatedInterest,
+    amount: generatedInterest,
     is_increment: true,
   };
   logger.log(`Liquidation created for account ${savingAccount._id}`);

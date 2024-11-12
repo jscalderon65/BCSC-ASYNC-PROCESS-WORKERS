@@ -21,6 +21,9 @@
       "@ear-liquidator/*": [
         "src/ear-liquidator/*"
       ],
+      "@two-fa-email-controller/*": [
+        "src/two-fa-email-controller/*"
+      ],
       "@constants/*": [
         "src/common/constants/*"
       ],
