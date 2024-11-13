@@ -87,7 +87,6 @@ export class TwoFaEmailControllerWorker {
       if (msg) {
         try {
           const messageFormatted = JSON.parse(msg.content.toString());
-          this.logger.log(messageFormatted);
           await sendTwoFactorAuthenticationEmail(messageFormatted, this.logger);
           this.channel.ack(msg);
         } catch (error) {
