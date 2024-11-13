@@ -13,7 +13,7 @@ export async function calculateDailyLiquidationInterest(
   savingAccount: SavingsAccount,
   logger: Logger,
 ): Promise<void> {
-  const earValue = EAR_VALUE;
+  const earValue = EAR_VALUE / 100;
   const liquidationBase = savingAccount.balance;
   const dailyRate = Math.pow(1 + earValue, 1 / 365) - 1;
   const generatedInterest = Number((liquidationBase * dailyRate).toFixed(2));
